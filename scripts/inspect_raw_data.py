@@ -34,4 +34,4 @@ for fname, (ftype, sep) in files.items():
     print(f"\nColumns: {list(df.columns)}")
     print(f"\nDtypes:\n{df.dtypes}")
     print(f"\nFirst 5 rows:\n{df.to_string()}")
-    print(f"\nNulls per column (in sample):\n{df.isnull().sum().to_string()}")
+    print(f"\nNulls per column (in sample):\n{df.isna().sum().to_string()}")

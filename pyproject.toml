@@ -2,6 +2,9 @@
 line-length = 100
 target-version = "py311"
 src = ["src", "tests"]
+extend-exclude = [
+    "notebooks/00_bienvenida_verificacion.ipynb",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF", "PL", "PD"]

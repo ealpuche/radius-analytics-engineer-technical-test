@@ -3,7 +3,7 @@
 # Requiere: Docker Desktop instalado y corriendo
 
 .PHONY: build up down shell dbt-run dbt-test dbt-docs clean help \
-	pre-commit-install pre-commit-run test lint format dbt-deps dbt-build
+	pre-commit-install pre-commit-run test lint format dbt-deps dbt-build ci-local
 
 ## Construir la imagen Docker (solo necesario la primera vez)
 build:
@@ -71,6 +71,21 @@ dbt-deps:
 dbt-build:
 	docker compose exec workspace bash -c "cd /workspace/dbt_project/mercado && dbt build"
 
+## Correr EXACTAMENTE las mismas validaciones que GitHub Actions (rule pre-commit)
+ci-local:
+	@echo "── 1/5 ruff check (full repo) ──"
+	docker compose exec workspace bash -c "cd /workspace && ruff check ."
+	@echo "── 2/5 ruff format --check (full repo) ──"
+	docker compose exec workspace bash -c "cd /workspace && ruff format --check ."
+	@echo "── 3/5 pytest con cobertura ──"
+	docker compose exec workspace bash -c "cd /workspace && pytest tests/ --cov=src/mercado --cov-report=term-missing"
+	@echo "── 4/5 dbt deps + parse ──"
+	docker compose exec workspace bash -c "cd /workspace/dbt_project/mercado && dbt deps && dbt parse"
+	@echo "── 5/5 dbt compile ──"
+	docker compose exec workspace bash -c "cd /workspace/dbt_project/mercado && dbt compile"
+	@echo ""
+	@echo "✅ Todas las validaciones de CI pasaron localmente. Listo para commit."
+
 ## Mostrar este mensaje de ayuda
 help:
 	@echo ""
@@ -91,4 +106,5 @@ help:
 	@echo "  make format      → ruff format (contenedor)"
 	@echo "  make dbt-deps    → dbt deps"
 	@echo "  make dbt-build   → dbt build"
+	@echo "  make ci-local    → Validaciones de CI antes de commit (REGLA OBLIGATORIA)"
 	@echo ""
