@@ -15,6 +15,10 @@ ENV PATH="${JAVA_HOME}/bin:${PATH}"
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
+# ── Python: dependencias de desarrollo (testing, linting, pre-commit) ─────────
+COPY requirements-dev.txt /tmp/requirements-dev.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-dev.txt
+
 # ── dbt: perfil preconfigurado para DuckDB ────────────────────────────────────
 RUN mkdir -p /root/.dbt
 COPY profiles.yml /root/.dbt/profiles.yml
@@ -26,6 +30,8 @@ RUN mkdir -p /workspace/data/raw \
              /workspace/notebooks \
              /workspace/scripts \
              /workspace/sql \
+             /workspace/src \
+             /workspace/tests \
              /workspace/dbt_project
 
 # ── Jupyter: configuración mínima ─────────────────────────────────────────────

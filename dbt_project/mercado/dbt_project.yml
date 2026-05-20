@@ -1,24 +1,44 @@
-name: 'mercado'
-version: '1.0.0'
+name: "mercado"
+version: "1.0.0"
 config-version: 2
 
-profile: 'mercado'
+profile: "mercado"
 
 model-paths: ["models"]
-seed-paths:  ["seeds"]
-test-paths:  ["tests"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
 macro-paths: ["macros"]
 
 target-path: "target"
 clean-targets: ["target", "dbt_packages"]
 
 # ── Variables de negocio configurables ───────────────────────────────────────
+# Todas las reglas de negocio del PDF están parametrizadas aquí o en seeds.
 # Modifica estos valores aquí o pásalos en tiempo de ejecución:
 #   dbt run --vars '{"plazo_devolucion_dias": 15}'
 vars:
-  plazo_devolucion_dias:          30
-  ventana_cliente_activo_meses:   12
-  umbral_recompra_dias:           7
+  # Regla 1: Validez de orden
+  plazo_devolucion_dias: 30
+  estados_pago_validos: ["confirmado", "CONFIRMADO", "pagado", "PAGADO", "approved", "APPROVED"]
+
+  # Regla 4: Cliente activo (ventana global por defecto; override regional vía seed)
+  ventana_cliente_activo_meses: 12
+
+  # Regla 7: Cliente recurrente
+  umbral_recompra_dias: 7
+  min_ordenes_cliente_recurrente: 2
+
+  # Fecha de ejecución del pipeline (usada por Reglas 4 y 5)
+  fecha_ejecucion_pipeline: '{{ run_started_at.strftime("%Y-%m-%d") }}'
+
+  # Timezone para dbt_date (transitivo desde dbt_expectations)
+  "dbt_date:time_zone": "America/Mexico_City"
+
+  # Reglas 2, 3, 5 están parametrizadas vía seeds (no vars):
+  #   - Regla 2 (canal venta):           seeds/seed_canal_catalogo.csv
+  #   - Regla 3 (razon devolucion):      seeds/seed_devolucion_patrones.csv
+  #   - Regla 5 (segmentacion valor):    seeds/seed_umbrales_segmentacion.csv
+  # Regla 6 (registro canonico): encapsulada en macro macros/get_orden_canonica.sql
 
 # ── Configuración de materializaciones por capa ───────────────────────────────
 models:
@@ -34,3 +54,8 @@ models:
     marts:
       +materialized: table
       +schema: marts
+
+seeds:
+  mercado:
+    +schema: seeds
+    +quote_columns: false

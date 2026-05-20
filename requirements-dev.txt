@@ -1,0 +1,7 @@
+-r requirements.txt
+pytest==8.3.3
+pytest-cov==5.0.0
+ruff==0.6.9
+sqlfluff==3.2.4
+sqlfluff-templater-dbt==3.2.4
+pre-commit==3.8.0

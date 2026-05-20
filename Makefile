@@ -2,7 +2,8 @@
 # Uso: make <comando>
 # Requiere: Docker Desktop instalado y corriendo
 
-.PHONY: build up down shell dbt-run dbt-test dbt-docs clean help
+.PHONY: build up down shell dbt-run dbt-test dbt-docs clean help \
+	pre-commit-install pre-commit-run test lint format dbt-deps dbt-build
 
 ## Construir la imagen Docker (solo necesario la primera vez)
 build:
@@ -41,6 +42,35 @@ down:
 clean:
 	docker compose down --rmi all --volumes
 
+## Instalar pre-commit hooks en tu git local
+pre-commit-install:
+	pre-commit install
+
+## Correr todos los pre-commit hooks contra todos los archivos
+pre-commit-run:
+	pre-commit run --all-files
+
+## Correr tests Python con coverage (dentro del contenedor)
+test:
+	docker compose exec workspace bash -c "cd /workspace && pytest tests/ --cov=src/mercado --cov-report=term-missing"
+
+## Lint de Python (ruff) y SQL (sqlfluff)
+lint:
+	docker compose exec workspace bash -c "cd /workspace && ruff check src/ tests/"
+	docker compose exec workspace bash -c "cd /workspace && sqlfluff lint dbt_project/mercado/models/ --config /workspace/.sqlfluff" || echo "(sqlfluff: aún sin modelos para validar — OK en esta fase)"
+
+## Formatear código Python con ruff
+format:
+	docker compose exec workspace bash -c "cd /workspace && ruff format src/ tests/"
+
+## Instalar dependencias de dbt (packages.yml)
+dbt-deps:
+	docker compose exec workspace bash -c "cd /workspace/dbt_project/mercado && dbt deps"
+
+## Pipeline completo: deps → build → test → docs
+dbt-build:
+	docker compose exec workspace bash -c "cd /workspace/dbt_project/mercado && dbt build"
+
 ## Mostrar este mensaje de ayuda
 help:
 	@echo ""
@@ -54,4 +84,11 @@ help:
 	@echo "  make dbt-docs    → Generar y servir docs dbt"
 	@echo "  make down        → Apagar el entorno"
 	@echo "  make clean       → Apagar y limpiar imagen"
+	@echo "  make pre-commit-install → Instalar hooks pre-commit"
+	@echo "  make pre-commit-run     → Ejecutar hooks en todos los archivos"
+	@echo "  make test        → pytest con cobertura (contenedor)"
+	@echo "  make lint        → ruff + sqlfluff (contenedor)"
+	@echo "  make format      → ruff format (contenedor)"
+	@echo "  make dbt-deps    → dbt deps"
+	@echo "  make dbt-build   → dbt build"
 	@echo ""

@@ -17,8 +17,10 @@ services:
       - ./scripts:/workspace/scripts
       - ./sql:/workspace/sql
       - ./dbt_project:/workspace/dbt_project
+      - ./src:/workspace/src
+      - ./tests:/workspace/tests
     environment:
-      - PYTHONPATH=/workspace
+      - PYTHONPATH=/workspace/src:/workspace
       - DBT_PROFILES_DIR=/root/.dbt
     working_dir: /workspace
     # Mantiene el contenedor vivo aunque no haya sesión Jupyter activa

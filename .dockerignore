@@ -39,3 +39,12 @@ env/
 # Sistema operativo
 .DS_Store
 Thumbs.db
+
+# Dev tooling artifacts
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+src/**/__pycache__/
+tests/**/__pycache__/

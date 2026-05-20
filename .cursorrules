@@ -1,0 +1,77 @@
+You are working on a Senior Analytics Engineer technical assessment for Radius.
+The deliverable will be reviewed by a Senior Tech Lead and defended in a live session.
+The runtime environment was provided by Radius and is OPINIONATED — respect their conventions.
+
+PROJECT IDENTITY:
+- dbt project name: "mercado"
+- dbt project location: dbt_project/mercado/
+- Python package location: src/mercado/
+- Variables and column names: SPANISH (matches Radius profiles.yml)
+- Documentation: SPANISH (audience is Mexican recruitment team)
+- Code comments: SPANISH for business logic, ENGLISH for purely technical notes
+
+CORE PRINCIPLES:
+1. Minimalism over cleverness. YAGNI strictly enforced.
+2. Explicit over implicit. Zero hardcoded business values. All thresholds via dbt vars or seeds.
+3. Single Responsibility Principle at function/model level.
+4. Pure functions for cleaning/normalization utilities. No side effects.
+5. Type hints mandatory in Python. PEP 585 generics (list, dict, tuple).
+6. Google-style docstrings on public functions.
+
+STACK (already pinned by Radius, do not change versions):
+- Python 3.11, pandas 2.2.2, pyspark 3.5.1, duckdb 1.0.0
+- dbt-core 1.8.4, dbt-duckdb 1.8.1
+- jupyter, matplotlib, seaborn, plotly
+
+DEV TOOLING (added by us):
+- pytest 8.x, pytest-cov, ruff 0.6.x, sqlfluff 3.2.x, pre-commit
+
+NAMING CONVENTIONS:
+- Python: snake_case
+- dbt staging: stg_<entidad>__<fuente>.sql (ej: stg_clientes__cdmx.sql)
+- dbt intermediate: int_<entidad>__<accion>.sql (ej: int_ordenes__canonicas.sql)
+- dbt marts: fct_<entidad>.sql, dim_<entidad>.sql, mart_<proposito>.sql
+- Seeds: seed_<proposito>.csv (ej: seed_canal_catalogo.csv)
+- Test files Python: test_<modulo>.py
+
+DBT RULES:
+- Never SELECT * in final SELECT (acceptable in passthrough CTEs)
+- Every model has schema.yml entry: description + tests
+- Materializations (set in dbt_project.yml): staging=view, intermediate=view, marts=table
+- Use {{ var() }}, {{ ref() }}, {{ source() }}. Zero hardcoded business values.
+- CTEs over subqueries
+
+PYTHON RULES:
+- No mutable default arguments
+- No `import *`
+- Imports order: stdlib, third-party, local (one blank line between)
+- Functions over classes unless state is genuinely needed
+- f-strings only
+- pathlib.Path over os.path
+- logging module, never print() in non-script code
+
+TESTING RULES:
+- Python utilities: STRICT TDD. Tests first, implementation second.
+- dbt models: contract-first. schema.yml + generic tests defined BEFORE the SQL.
+- Each Python utility: minimum 1 happy path + 1 edge case + 1 invalid input.
+
+CODE STYLE:
+- Line length: 100
+- Indentation: 4 spaces
+- Quotes: double for docstrings, single for everything else
+- Trailing commas in multi-line collections
+
+ANTI-PATTERNS TO REJECT:
+- Wrapper classes around DataFrames
+- Factory patterns for 2-3 known types
+- Strategy pattern for static catalogs (use seeds + macros)
+- Inheritance hierarchies
+- "Manager" / "Helper" / "Util" classes (split into functions)
+- Premature abstraction for "future extensibility"
+- Mixing Spanish and English in variable names
+
+WHEN GENERATING CODE:
+- File path as first-line comment when generating standalone files
+- Only necessary imports
+- No commented-out code
+- No TODO comments unless requested
