@@ -1,0 +1,279 @@
+version: 2
+
+models:
+  - name: stg_clientes__cdmx
+    description: >
+      Clientes de CDMX desde CSV. Estandariza columnas a contrato común sin
+      unificar con otras fuentes. Teléfono y SKU se conservan en crudo.
+    columns:
+      - name: cliente_id
+        description: Identificador único del cliente en fuente CDMX.
+        data_tests:
+          - not_null
+          - unique:
+              config:
+                severity: warn
+          - dbt_expectations.expect_column_values_to_match_regex:
+              regex: '^CLI-[0-9]+$'
+      - name: nombre_completo
+        description: Nombre y apellidos concatenados.
+      - name: email
+        description: Correo electrónico normalizado; vacío a null.
+      - name: genero
+        description: Género reportado en fuente.
+      - name: fecha_registro
+        description: Fecha de alta parseada con macro flexible.
+      - name: estado
+        description: Estado o entidad federativa.
+      - name: telefono
+        description: Teléfono en formato crudo de origen.
+      - name: codigo_postal
+        description: CP mexicano de 5 dígitos o null si inválido.
+      - name: activo_flag
+        description: Indicador booleano de cliente activo.
+        data_tests:
+          - accepted_values:
+              values: [true, false]
+      - name: alcaldia_municipio
+        description: Alcaldía o municipio (solo CDMX).
+      - name: region
+        description: Etiqueta de procedencia de la fuente.
+        data_tests:
+          - accepted_values:
+              values: ['CDMX']
+
+  - name: stg_clientes__gdl_mty
+    description: >
+      Clientes de Guadalajara y Monterrey. Mapea columnas en inglés al contrato
+      común de staging. Sin alcaldía en esta fuente.
+    columns:
+      - name: cliente_id
+        description: Identificador del cliente (customer_id renombrado).
+        data_tests:
+          - not_null
+          - unique:
+              config:
+                severity: warn
+      - name: nombre_completo
+        description: Nombre completo desde first_name y last_name.
+      - name: email
+        description: Correo electrónico normalizado.
+      - name: genero
+        description: Género (gender).
+      - name: fecha_registro
+        description: Fecha de registro parseada.
+      - name: estado
+        description: Estado federativo (state).
+      - name: telefono
+        description: Teléfono crudo, puede incluir extensión.
+      - name: codigo_postal
+        description: Código postal desde zip_code.
+      - name: activo_flag
+        description: Cliente activo (is_active).
+        data_tests:
+          - accepted_values:
+              values: [true, false]
+      - name: alcaldia_municipio
+        description: No disponible en fuente; siempre null.
+      - name: region
+        description: Etiqueta de procedencia GDL/MTY.
+        data_tests:
+          - accepted_values:
+              values: ['GDL_MTY']
+
+  - name: stg_clientes__resto
+    description: >
+      Clientes del resto del país desde Parquet. Fecha de registro en epoch
+      segundos convertida a date.
+    columns:
+      - name: cliente_id
+        description: Identificador del cliente.
+        data_tests:
+          - not_null
+          - unique:
+              config:
+                severity: warn
+      - name: nombre_completo
+        description: Nombre completo ya unificado en fuente.
+      - name: email
+        description: Correo electrónico.
+      - name: genero
+        description: Género del cliente.
+      - name: fecha_registro
+        description: Fecha desde epoch Unix (segundos).
+      - name: estado
+        description: Estado federativo.
+      - name: telefono
+        description: Teléfono en formato crudo.
+      - name: codigo_postal
+        description: Código postal normalizado a 5 dígitos.
+      - name: activo_flag
+        description: Flag numérico convertido a booleano.
+        data_tests:
+          - accepted_values:
+              values: [true, false]
+      - name: alcaldia_municipio
+        description: No disponible; siempre null.
+      - name: region
+        description: Etiqueta RESTO.
+        data_tests:
+          - accepted_values:
+              values: ['RESTO']
+
+  - name: stg_productos__catalogo
+    description: >
+      Catálogo de productos. SKU y precios en crudo; normalización de SKU en
+      capa intermediate.
+    columns:
+      - name: sku
+        description: SKU en formato original de fuente.
+        data_tests:
+          - not_null
+      - name: nombre_producto
+        description: Nombre comercial del producto.
+      - name: categoria_subcategoria
+        description: Jerarquía categoría > subcategoría.
+      - name: precio_lista
+        description: Precio de lista parseado a decimal.
+        data_tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              config:
+                severity: warn
+      - name: peso_kg
+        description: Peso en kilogramos extraído de cadena con unidad.
+      - name: proveedor
+        description: Nombre del proveedor.
+      - name: descripcion
+        description: Descripción del producto; vacío a null.
+      - name: stock_disponible
+        description: Unidades en inventario.
+      - name: fecha_alta
+        description: Fecha de alta al catálogo.
+      - name: activo
+        description: Producto activo en catálogo.
+        data_tests:
+          - accepted_values:
+              values: [true, false]
+
+  - name: stg_ordenes__2022_2023
+    description: >
+      Órdenes históricas esquema v1. Canal y estatus de pago separados desde
+      campo compuesto canal_estatus.
+    columns:
+      - name: orden_id
+        description: Identificador de orden (order_id).
+        data_tests:
+          - not_null
+          - unique:
+              config:
+                severity: warn
+      - name: cliente_id
+        description: Cliente asociado (id_cliente).
+        data_tests:
+          - not_null
+      - name: sku_producto
+        description: SKU del producto en formato crudo.
+      - name: canal_raw
+        description: Canal de venta sin normalizar.
+      - name: estatus_pago_raw
+        description: Estatus de pago sin normalizar.
+      - name: fecha_orden
+        description: Fecha de la orden.
+      - name: monto_total
+        description: Monto total de la orden.
+        data_tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              config:
+                severity: warn
+      - name: cantidad
+        description: Unidades ordenadas.
+      - name: direccion_entrega
+        description: Dirección de entrega.
+      - name: descuento_aplicado
+        description: Descuento; null en esquema v1.
+      - name: fecha_actualizacion
+        description: Última actualización del registro.
+      - name: anio_esquema
+        description: Etiqueta de versión de esquema fuente.
+        data_tests:
+          - accepted_values:
+              values: ['2022_2023']
+
+  - name: stg_ordenes__2024
+    description: >
+      Órdenes 2024 esquema v2 con columnas renombradas. Incluye descuento
+      aplicado capturado en fuente.
+    columns:
+      - name: orden_id
+        description: Identificador de orden.
+        data_tests:
+          - not_null
+          - unique:
+              config:
+                severity: warn
+      - name: cliente_id
+        description: Cliente asociado.
+        data_tests:
+          - not_null
+      - name: sku_producto
+        description: SKU (producto_sku) en crudo.
+      - name: canal_raw
+        description: Canal de venta sin normalizar.
+      - name: estatus_pago_raw
+        description: Estatus de pago sin normalizar.
+      - name: fecha_orden
+        description: Fecha de compra (fecha_compra).
+      - name: monto_total
+        description: Monto de la orden.
+        data_tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              config:
+                severity: warn
+      - name: cantidad
+        description: Cantidad de unidades.
+      - name: direccion_entrega
+        description: Domicilio de entrega.
+      - name: descuento_aplicado
+        description: Descuento aplicado en esquema v2.
+      - name: fecha_actualizacion
+        description: Fecha de última modificación.
+      - name: anio_esquema
+        description: Etiqueta de versión 2024.
+        data_tests:
+          - accepted_values:
+              values: ['2024']
+
+  - name: stg_devoluciones
+    description: >
+      Devoluciones desde TXT delimitado por pipe. Razón en texto libre;
+      clasificación en intermediate.
+    columns:
+      - name: devolucion_id
+        description: Identificador único de devolución.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Orden asociada a la devolución.
+        data_tests:
+          - not_null
+      - name: fecha_solicitud
+        description: Fecha de solicitud de devolución.
+      - name: razon_devolucion
+        description: Motivo en texto libre (crudo).
+      - name: dias_para_devolucion
+        description: Días extraídos de cadena con unidad.
+      - name: monto_reembolso
+        description: Monto reembolsado.
+        data_tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              config:
+                severity: warn
+      - name: estatus_devolucion
+        description: Estatus en mayúsculas.
+      - name: motivo_adicional
+        description: Comentario adicional opcional.

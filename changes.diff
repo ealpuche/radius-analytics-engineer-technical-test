@@ -1,0 +1,40 @@
+diff --git a/dbt_project/mercado/models/staging/sources.yml b/dbt_project/mercado/models/staging/sources.yml
+index 2c2c16a..b79dc34 100644
+--- a/dbt_project/mercado/models/staging/sources.yml
++++ b/dbt_project/mercado/models/staging/sources.yml
+@@ -6,15 +6,35 @@ sources:
+     tables:
+       - name: clientes_cdmx
+         description: "Fragmento de clientes de CDMX (CSV)"
++        meta:
++          external_location: "read_csv('/workspace/data/raw/clientes_cdmx.csv', delim=',', header=true, all_varchar=true)"
++
+       - name: clientes_gdl_mty
+         description: "Fragmento de clientes de Guadalajara y Monterrey (CSV)"
++        meta:
++          external_location: "read_csv('/workspace/data/raw/clientes_gdl_mty.csv', delim=',', header=true, all_varchar=true)"
++
+       - name: clientes_resto
+         description: "Fragmento de clientes del resto del país (Parquet)"
++        meta:
++          external_location: "read_parquet('/workspace/data/raw/clientes_resto.parquet')"
++
+       - name: catalogo_productos
+         description: "Catálogo de productos con SKUs (CSV)"
++        meta:
++          external_location: "read_csv('/workspace/data/raw/catalogo_productos.csv', delim=',', header=true, all_varchar=true)"
++
+       - name: ordenes_2022_2023
+         description: "Órdenes históricas 2022-2023 (Parquet, esquema v1)"
++        meta:
++          external_location: "read_parquet('/workspace/data/raw/ordenes_2022_2023.parquet')"
++
+       - name: ordenes_2024
+         description: "Órdenes 2024 (Parquet, esquema v2 — columnas renombradas)"
++        meta:
++          external_location: "read_parquet('/workspace/data/raw/ordenes_2024.parquet')"
++
+       - name: devoluciones
+         description: "Registro de devoluciones en texto libre (TXT pipe-delimited)"
++        meta:
++          external_location: "read_csv('/workspace/data/raw/devoluciones.txt', delim='|', header=true, all_varchar=true)"
