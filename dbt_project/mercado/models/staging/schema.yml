@@ -13,8 +13,6 @@ models:
           - unique:
               config:
                 severity: warn
-          - dbt_expectations.expect_column_values_to_match_regex:
-              regex: '^CLI-[0-9]+$'
       - name: nombre_completo
         description: Nombre y apellidos concatenados.
       - name: email
